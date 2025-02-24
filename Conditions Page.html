@@ -1,0 +1,1463 @@
+<!-- Conditions TreeList Container -->
+
+<script>
+  jQuery(document).ready(function ($) {
+    // Variables to store dropdown data
+    let srcaCategoriesData = [];
+    let timeframe1Data = [];
+    let timeframe2Data = [];
+    let timeframe3Data = [];
+    let timeframe4Data = [];
+
+    // Add these variables at the top of your script, after the other variable declarations
+    let reportType1Name = "Timeframe 1";
+    let reportType2Name = "Timeframe 2";
+    let reportType3Name = "Timeframe 3";
+    let reportType4Name = "Timeframe 4";
+
+    // Function to fetch all dropdown data
+    Promise.all([
+      // Fetch categories
+      $.ajax({
+        url: "/graphql",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          query: `
+                        query srcaCategoriesList {
+                          srcaCategories(first: 200, where: {order: ASC}) {
+                            nodes {
+                              name
+                              id
+                            }
+                          }
+                        }
+                      `,
+        }),
+      }),
+      // Fetch timeframe1
+      $.ajax({
+        url: "/graphql",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          query: `
+                        query getTimeframe1 {
+                          timeframe1s(first: 200) {
+                            nodes {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      `,
+        }),
+      }),
+      // Fetch timeframe2
+      $.ajax({
+        url: "/graphql",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          query: `
+                        query getTimeframe2 {
+                           timeframe2s(first: 200, where: {order: ASC}) {
+                            nodes {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      `,
+        }),
+      }),
+      // Fetch timeframe3
+      $.ajax({
+        url: "/graphql",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          query: `
+                        query getTimeframe3 {
+                          timeframe3s(first: 200, where: {order: ASC}) {
+                            nodes {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      `,
+        }),
+      }),
+      // Fetch timeframe4
+      $.ajax({
+        url: "/graphql",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          query: `
+                        query getTimeframe4 {
+                          timeframe4s(first: 200, where: {order: ASC}) {
+                            nodes {
+                              id
+                              name
+                            }
+                          }
+                        }
+                      `,
+        }),
+      }),
+    ])
+      .then(function (results) {
+        srcaCategoriesData = results[0].data.srcaCategories.nodes;
+        timeframe1Data = results[1].data.timeframe1s.nodes;
+        timeframe2Data = results[2].data.timeframe2s.nodes;
+        timeframe3Data = results[3].data.timeframe3s.nodes;
+        timeframe4Data = results[4].data.timeframe4s.nodes;
+
+        // After getting all dropdown data, fetch user state
+        fetchUserState();
+      })
+      .catch(function (error) {
+        console.error("Error fetching dropdown data:", error);
+      });
+
+    // In your main initialization code, store the state ID in a variable
+    let userStateId;
+
+    function fetchUserState() {
+      $.ajax({
+        url: "/graphql",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          query: `
+    query getCurrentUserState {
+      viewer {
+        userState {
+          state1 {
+            nodes {
+              ... on State {
+                id
+                databaseId
+                reportType1s {
+                  nodes {
+                    id
+                    name
+                  }
+                }
+                reportType2s {
+                  nodes {
+                    id
+                    name
+                  }
+                }
+                reportType3s {
+                  nodes {
+                    id
+                    name
+                  }
+                }
+                reportType4s {
+                  nodes {
+                    name
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+                `,
+        }),
+        success: function (stateResponse) {
+          const stateNode = stateResponse.data.viewer.userState.state1.nodes[0];
+          userStateId = stateNode.databaseId;
+
+          // Check if each report type has nodes and store both names and visibility
+          const reportType1Data = {
+            names: stateNode.reportType1s.nodes
+              .map((node) => node.name)
+              .join(", "),
+            visible: stateNode.reportType1s.nodes.length > 0,
+          };
+          const reportType2Data = {
+            names: stateNode.reportType2s.nodes
+              .map((node) => node.name)
+              .join(", "),
+            visible: stateNode.reportType2s.nodes.length > 0,
+          };
+          const reportType3Data = {
+            names: stateNode.reportType3s.nodes
+              .map((node) => node.name)
+              .join(", "),
+            visible: stateNode.reportType3s.nodes.length > 0,
+          };
+          const reportType4Data = {
+            names: stateNode.reportType4s.nodes
+              .map((node) => node.name)
+              .join(", "),
+            visible: stateNode.reportType4s.nodes.length > 0,
+          };
+
+          // Store the report type names
+          reportType1Name = reportType1Data.names || "Timeframe 1";
+          reportType2Name = reportType2Data.names || "Timeframe 2";
+          reportType3Name = reportType3Data.names || "Timeframe 3";
+          reportType4Name = reportType4Data.names || "Timeframe 4";
+
+          console.log("User State ID:", userStateId);
+          console.log("Report Type Names:", {
+            reportType1Name,
+            reportType2Name,
+            reportType3Name,
+            reportType4Name,
+          });
+
+          initializeTreeList(userStateId);
+        },
+        error: function (error) {
+          console.error("Error fetching user state:", error);
+        },
+      });
+    }
+
+    // Function to generate years array for dropdown
+    function generateYearArray() {
+      const currentYear = new Date().getFullYear();
+      const years = [];
+      for (let i = 0; i < 20; i++) {
+        const year = currentYear - i;
+        years.push({text: year.toString(), value: year});
+      }
+      return years;
+    }
+
+    function mapCategoryNameFromId(id) {
+      if (!id) return "";
+      const category = srcaCategoriesData.find((c) => c.id === id);
+      return category ? category.name : id;
+    }
+
+    // 2. Update the yearMadeReportableEditor implementation
+function yearMadeReportableEditor(container, options) {
+  console.log("Year Editor - Initial Value:", options.model.yearMadeReportable);
+  
+  // Generate array of years (current year down to 20 years ago)
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({length: 20}, (_, i) => ({
+    text: String(currentYear - i),
+    value: currentYear - i
+  }));
+
+  $('<input required name="' + options.field + '"/>')
+    .appendTo(container)
+    .kendoDropDownList({
+      dataTextField: "text",
+      dataValueField: "value",
+      dataSource: years,
+      //optionLabel: "Select year",
+      value: options.model.yearMadeReportable || currentYear,
+      change: function(e) {
+        const selectedYear = this.value();
+        console.log("Selected year:", selectedYear);
+        
+        // Update the model with the selected year
+        options.model.set("yearMadeReportable", selectedYear ? Number(selectedYear) : null);
+        
+        console.log("Updated model:", {
+          yearMadeReportable: options.model.yearMadeReportable,
+          modelState: options.model
+        });
+      }
+    });
+}
+
+    function initializeTreeList(stateId) {
+      // Add this helper function at the start of initializeTreeList
+      function calculateReportableState(
+        timeframe1Id,
+        timeframe2Id,
+        timeframe3Id,
+        timeframe4Id
+      ) {
+        // Get the names of selected timeframes
+        const timeframe1Name =
+          timeframe1Data.find((t) => t.id === timeframe1Id)?.name ||
+          "Not Reportable";
+        const timeframe2Name =
+          timeframe2Data.find((t) => t.id === timeframe2Id)?.name ||
+          "Not Reportable";
+        const timeframe3Name =
+          timeframe3Data.find((t) => t.id === timeframe3Id)?.name ||
+          "Not Reportable";
+        const timeframe4Name =
+          timeframe4Data.find((t) => t.id === timeframe4Id)?.name ||
+          "Not Reportable";
+
+        // Return "Yes" if at least one timeframe is not "Not Reportable", "No" otherwise
+        return timeframe1Name === "Not Reportable" &&
+          timeframe2Name === "Not Reportable" &&
+          timeframe3Name === "Not Reportable" &&
+          timeframe4Name === "Not Reportable"
+          ? "No"
+          : "Yes";
+      }
+
+      const reportTypeVisibility = {
+        timeframe1: reportType1Name !== "Timeframe 1",
+        timeframe2: reportType2Name !== "Timeframe 2",
+        timeframe3: reportType3Name !== "Timeframe 3",
+        timeframe4: reportType4Name !== "Timeframe 4",
+      };
+
+      console.log("Report Types:", {
+        reportType1Name,
+        reportType2Name,
+        reportType3Name,
+        reportType4Name,
+      });
+      console.log("Report Type Visibility:", reportTypeVisibility);
+      let columns = [
+        {
+          field: "title",
+          expandable: true,
+          title: "Condition",
+          width: 250,
+        },
+        {
+          field: "categoryId",
+          title: "Categories",
+          width: 125,
+          template: "#: categories #",
+          editor: function (container, options) {
+            console.log(
+              "Category Editor - Current Value:",
+              options.model.categoryId
+            );
+
+            var dropDown = $('<input required name="' + options.field + '"/>')
+              .appendTo(container)
+              .kendoDropDownList({
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: srcaCategoriesData,
+                //optionLabel: "Select a category",
+              })
+              .data("kendoDropDownList");
+
+            // Set value after initialization
+            setTimeout(function () {
+              dropDown.value(options.model.categoryId);
+              console.log(
+                "Category dropdown value set to:",
+                options.model.categoryId
+              );
+            }, 0);
+          },
+        },
+      ];
+
+      if (reportTypeVisibility.timeframe1) {
+        columns.push({
+          field: "timeframe1Id",
+          title: reportType1Name,
+          width: 125,
+          template: "#: timeframe1 #",
+          editor: function (container, options) {
+            console.log(
+              "Timeframe1 Editor - Current Value:",
+              options.model.timeframe1Id
+            );
+
+            var dropDown = $('<input required name="' + options.field + '"/>')
+              .appendTo(container)
+              .kendoDropDownList({
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: timeframe1Data,
+                //optionLabel: "Select " + reportType1Name.toLowerCase(), // Updated placeholder
+              })
+              .data("kendoDropDownList");
+
+            setTimeout(function () {
+              dropDown.value(options.model.timeframe1Id);
+              console.log(
+                "Timeframe1 dropdown value set to:",
+                options.model.timeframe1Id
+              );
+            }, 0);
+          },
+        });
+      }
+
+      if (reportTypeVisibility.timeframe2) {
+        columns.push({
+          field: "timeframe2Id",
+          title: reportType2Name,
+          width: 150,
+          template: "#: timeframe2 #",
+          editor: function (container, options) {
+            console.log(
+              "Timeframe2 Editor - Current Value:",
+              options.model.timeframe2Id
+            );
+
+            var dropDown = $('<input required name="' + options.field + '"/>')
+              .appendTo(container)
+              .kendoDropDownList({
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: timeframe2Data,
+               // optionLabel: "Select " + reportType2Name.toLowerCase(), // Updated placeholder
+              })
+              .data("kendoDropDownList");
+
+            setTimeout(function () {
+              dropDown.value(options.model.timeframe2Id);
+              console.log(
+                "Timeframe2 dropdown value set to:",
+                options.model.timeframe2Id
+              );
+            }, 0);
+          },
+        });
+      }
+
+      if (reportTypeVisibility.timeframe3) {
+        columns.push({
+          field: "timeframe3Id",
+          title: reportType3Name,
+          width: 125,
+          template: "#: timeframe3 #",
+          editor: function (container, options) {
+            console.log(
+              "Timeframe3 Editor - Current Value:",
+              options.model.timeframe3Id
+            );
+
+            var dropDown = $('<input required name="' + options.field + '"/>')
+              .appendTo(container)
+              .kendoDropDownList({
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: timeframe3Data,
+               // optionLabel: "Select " + reportType3Name.toLowerCase(), // Updated placeholder
+              })
+              .data("kendoDropDownList");
+
+            setTimeout(function () {
+              dropDown.value(options.model.timeframe3Id);
+              console.log(
+                "Timeframe3 dropdown value set to:",
+                options.model.timeframe3Id
+              );
+            }, 0);
+          },
+        });
+      }
+
+      if (reportTypeVisibility.timeframe4) {
+        columns.push({
+          field: "timeframe4Id",
+          title: reportType4Name,
+          width: 125,
+          template: "#: timeframe4 #",
+          editor: function (container, options) {
+            console.log(
+              "Timeframe4 Editor - Current Value:",
+              options.model.timeframe4Id
+            );
+
+            var dropDown = $('<input required name="' + options.field + '"/>')
+              .appendTo(container)
+              .kendoDropDownList({
+                dataTextField: "name",
+                dataValueField: "id",
+                dataSource: timeframe4Data,
+               // optionLabel: "Select " + reportType4Name.toLowerCase(), // Updated placeholder
+              })
+              .data("kendoDropDownList");
+
+            setTimeout(function () {
+              dropDown.value(options.model.timeframe4Id);
+              console.log(
+                "Timeframe4 dropdown value set to:",
+                options.model.timeframe4Id
+              );
+            }, 0);
+          },
+        });
+      }
+
+      columns = columns.concat([
+        {
+          field: "nnc",
+          title: "NNC",
+          width: 75,
+          template: "#: nnc #",
+          editor: function (container, options) {
+            console.log("NNC Editor - Current Value:", options.model.nnc);
+
+            var dropDown = $('<input required name="' + options.field + '"/>')
+              .appendTo(container)
+              .kendoDropDownList({
+                dataSource: ["Yes", "No"],
+               // optionLabel: "Select Yes/No",
+              })
+              .data("kendoDropDownList");
+
+            setTimeout(function () {
+              dropDown.value(options.model.nnc);
+              console.log("NNC dropdown value set to:", options.model.nnc);
+            }, 0);
+          },
+        },
+        {
+  field: "yearMadeReportable",
+  title: "Year Made Reportable",
+  width: 100,
+  editor: yearMadeReportableEditor,
+  template: function(dataItem) {
+    return dataItem.yearMadeReportable || "";
+  }
+},
+        {
+          field: "reportableState",
+          title: "Reportable State",
+          width: 100,
+          editable: false,
+        },
+        {
+          command: [{name: "createchild", text: "Add child"}, "edit"],
+          width: 200,
+          title: "Actions",
+        },
+      ]);
+      var dataSource = new kendo.data.TreeListDataSource({
+        transport: {
+          read: function (options) {
+            $.ajax({
+              url: "/graphql",
+              type: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({
+                query: `
+              query GetConditionsForState($stateId: Int!) {
+                conditions(
+                  where: {stateId: $stateId, orderby: {field: TITLE, order: ASC}}
+                  first: 50000
+                ) {
+                  nodes {
+                    ... on Condition {
+                      title
+                      timeframe1s {
+                        nodes {
+                          name
+                          id
+                        }
+                      }
+                      parentDatabaseId
+                      srcaCategories {
+                        nodes {
+                          name
+                          id
+                        }
+                      }
+                      databaseId
+                      timeframe4s {
+                        nodes {
+                          name
+                          id
+                        }
+                      }
+                      timeframe2s {
+                        nodes {
+                          name
+                          id
+                        }
+                      }
+                      timeframe3s {
+                        nodes {
+                          name
+                          id
+                        }
+                      }
+                      srcaConditions {
+                        nnc
+                        yearMadeReportable
+                        reportableState
+                      }
+                    }
+                  }
+                }
+              }
+            `,
+                variables: {
+                  stateId: parseInt(stateId, 10),
+                },
+              }),
+              success: function (response) {
+                if (response.errors) {
+                  console.error("GraphQL errors:", response.errors);
+                  options.error(response.errors);
+                  return;
+                }
+
+                const conditions = response.data.conditions.nodes.map(
+                  (node) => ({
+                    databaseId: node.databaseId,
+                    title: node.title,
+                    timeframe1: node.timeframe1s.nodes
+                      .map((t) => t.name)
+                      .join(", "),
+                    timeframe1Id: node.timeframe1s.nodes[0]?.id || null,
+                    timeframe2: node.timeframe2s.nodes
+                      .map((t) => t.name)
+                      .join(", "),
+                    timeframe2Id: node.timeframe2s.nodes[0]?.id || null,
+                    timeframe3: node.timeframe3s.nodes
+                      .map((t) => t.name)
+                      .join(", "),
+                    timeframe3Id: node.timeframe3s.nodes[0]?.id || null,
+                    timeframe4: node.timeframe4s.nodes
+                      .map((t) => t.name)
+                      .join(", "),
+                    timeframe4Id: node.timeframe4s.nodes[0]?.id || null,
+                    categories: node.srcaCategories.nodes
+                      .map((c) => c.name)
+                      .join(", "),
+                    categoryId: node.srcaCategories.nodes[0]?.id || null,
+                    nnc: node.srcaConditions?.nnc ? "Yes" : "No",
+  yearMadeReportable: node.srcaConditions?.yearMadeReportable ? 
+                      parseInt(node.srcaConditions.yearMadeReportable, 10) : 
+                      null,
+
+                    reportableState: node.srcaConditions?.reportableState
+                      ? "Yes"
+                      : "No",
+                    parentDatabaseId: node.parentDatabaseId,
+                  })
+                );
+
+                options.success(conditions);
+              },
+              error: function (xhr, status, error) {
+                console.error("Read failed:", error);
+                options.error(error);
+              },
+            });
+          },
+          create: function (options) {
+            const model = options.data;
+            console.log("Create model data:", model); // Let's first check what data we're receiving
+
+            // Calculate reportable state
+            const isReportable = calculateReportableState(
+              model.timeframe1Id,
+              model.timeframe2Id,
+              model.timeframe3Id,
+              model.timeframe4Id
+            );
+
+            const createInput = {
+              title: model.title || "",
+              status: "PUBLISH",
+              clientMutationId: `create-condition-${Date.now()}`,
+              parentId: model.parentDatabaseId
+                ? String(model.parentDatabaseId)
+                : null,
+              nnc: model.nnc === "Yes",
+              yearMadeReportable: model.yearMadeReportable ? parseInt(model.yearMadeReportable, 10) : null,
+              reportableState: isReportable === "Yes",
+              conditionState: stateId,
+
+              // Add taxonomy connections by default with empty arrays if not provided
+              srcaCategories: {
+                append: false,
+                nodes: model.categoryId ? [{id: model.categoryId}] : [], // Changed from databaseId to id
+              },
+              timeframe1s: {
+                append: false,
+                nodes: model.timeframe1Id ? [{id: model.timeframe1Id}] : [], // Changed from databaseId to id
+              },
+              timeframe2s: {
+                append: false,
+                nodes: model.timeframe2Id ? [{id: model.timeframe2Id}] : [], // Changed from databaseId to id
+              },
+              timeframe3s: {
+                append: false,
+                nodes: model.timeframe3Id ? [{id: model.timeframe3Id}] : [], // Changed from databaseId to id
+              },
+              timeframe4s: {
+                append: false,
+                nodes: model.timeframe4Id ? [{id: model.timeframe4Id}] : [], // Changed from databaseId to id
+              },
+            };
+
+            console.log("Create input with taxonomies:", createInput);
+
+            $.ajax({
+              url: "/graphql",
+              type: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({
+                query: `
+           mutation CreateCondition($input: CreateConditionInput!) {
+      createCondition(input: $input) {
+        condition {
+          databaseId
+          title
+          srcaCategories {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe1s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe2s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe3s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe4s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          srcaConditions {
+            nnc
+            yearMadeReportable
+            reportableState
+            conditionState {
+              nodes {
+                id
+                databaseId
+              }
+            }
+          }
+          parentDatabaseId
+        }
+      }
+    }
+          `,
+                variables: {
+                  input: createInput,
+                },
+              }),
+              success: function (response) {
+                if (response.errors) {
+                  console.error("GraphQL errors:", response.errors);
+                  options.error(response.errors);
+                  return;
+                }
+
+                const newCondition = response.data.createCondition.condition;
+                console.log("Created new condition:", newCondition);
+
+                // Transform the response to match the exact structure from the read operation
+                const result = {
+                  databaseId: newCondition.databaseId,
+                  title: newCondition.title,
+                  categories:
+                    newCondition.srcaCategories?.nodes
+                      ?.map((c) => c.name)
+                      .join(", ") || "",
+                  categoryId:
+                    newCondition.srcaCategories?.nodes?.[0]?.id || null, // This will now be the base64 id
+
+                  timeframe1:
+                    newCondition.timeframe1s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe1Id:
+                    newCondition.timeframe1s?.nodes?.[0]?.id || null, // This will now be the base64 id
+
+                  timeframe2:
+                    newCondition.timeframe2s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe2Id:
+                    newCondition.timeframe2s?.nodes?.[0]?.id || null, // This will now be the base64 id
+
+                  timeframe3:
+                    newCondition.timeframe3s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe3Id:
+                    newCondition.timeframe3s?.nodes?.[0]?.id || null, // This will now be the base64 id
+
+                  timeframe4:
+                    newCondition.timeframe4s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe4Id:
+                    newCondition.timeframe4s?.nodes?.[0]?.id || null, // This will now be the base64 id
+
+                  nnc: newCondition.srcaConditions?.nnc ? "Yes" : "No",
+                  yearMadeReportable:
+                    newCondition.srcaConditions?.yearMadeReportable || "",
+                  reportableState: newCondition.srcaConditions?.reportableState
+                    ? "Yes"
+                    : "No",
+                  parentDatabaseId: newCondition.parentDatabaseId,
+                };
+
+                console.log("Transformed result for TreeList:", result);
+                options.success(result);
+              },
+              error: function (xhr, status, error) {
+                console.error("Create condition failed:", error);
+                console.error("XHR Response:", xhr.responseText);
+                options.error(error);
+              },
+            });
+          },
+          // Corrected update function
+          update: function (options) {
+            const modelData = options.data.models
+              ? options.data.models[0]
+              : options.data;
+            console.log("Model data to update:", modelData);
+
+            if (!modelData || !modelData.databaseId) {
+              console.error("Missing required databaseId for update");
+              options.error("Missing required databaseId for update");
+              return;
+            }
+
+            // Calculate reportable state
+            const reportableState = calculateReportableState(
+              modelData.timeframe1Id,
+              modelData.timeframe2Id,
+              modelData.timeframe3Id,
+              modelData.timeframe4Id
+            );
+
+            const updateInput = {
+              id: String(modelData.databaseId),
+              title: modelData.title || "",
+              clientMutationId: `update-condition-${Date.now()}`,
+              parentId: modelData.parentDatabaseId
+                ? String(modelData.parentDatabaseId)
+                : null,
+
+              nnc: modelData.nnc === "Yes",
+              yearMadeReportable: modelData.yearMadeReportable
+                ? parseInt(modelData.yearMadeReportable, 10)
+                : null,
+              reportableState: reportableState === "Yes",
+              conditionState: stateId,
+
+              srcaCategories: {
+                append: false,
+                nodes: modelData.categoryId ? [{id: modelData.categoryId}] : [],
+              },
+              timeframe1s: {
+                append: false,
+                nodes: modelData.timeframe1Id
+                  ? [{id: modelData.timeframe1Id}]
+                  : [],
+              },
+              timeframe2s: {
+                append: false,
+                nodes: modelData.timeframe2Id
+                  ? [{id: modelData.timeframe2Id}]
+                  : [],
+              },
+              timeframe3s: {
+                append: false,
+                nodes: modelData.timeframe3Id
+                  ? [{id: modelData.timeframe3Id}]
+                  : [],
+              },
+              timeframe4s: {
+                append: false,
+                nodes: modelData.timeframe4Id
+                  ? [{id: modelData.timeframe4Id}]
+                  : [],
+              },
+            };
+
+            console.log("Sending update with input:", updateInput);
+
+            $.ajax({
+              url: "/graphql",
+              type: "POST",
+              contentType: "application/json",
+              data: JSON.stringify({
+                query: `
+            mutation UpdateCondition($input: UpdateConditionInput!) {
+      updateCondition(input: $input) {
+        condition {
+          databaseId
+          title
+          srcaCategories {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe1s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe2s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe3s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          timeframe4s {
+            nodes {
+              name
+              id  # Changed from databaseId to id
+            }
+          }
+          srcaConditions {
+            nnc
+            yearMadeReportable
+            reportableState
+            conditionState {
+              nodes {
+                id
+                databaseId
+              }
+            }
+          }
+          parentDatabaseId
+        }
+      }
+    }
+          `,
+                variables: {
+                  input: updateInput,
+                },
+              }),
+              success: function (response) {
+                if (response.errors) {
+                  console.error("GraphQL errors:", response.errors);
+                  options.error(response.errors);
+                  return;
+                }
+
+                const updatedCondition =
+                  response.data.updateCondition.condition;
+                console.log("Updated condition:", updatedCondition);
+
+                const result = {
+                  databaseId: updatedCondition.databaseId,
+                  title: updatedCondition.title,
+                  categories:
+                    updatedCondition.srcaCategories?.nodes
+                      ?.map((c) => c.name)
+                      .join(", ") || "",
+                  categoryId:
+                    updatedCondition.srcaCategories?.nodes?.[0]?.id || null, // Using base64 id
+
+                  timeframe1:
+                    updatedCondition.timeframe1s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe1Id:
+                    updatedCondition.timeframe1s?.nodes?.[0]?.id || null, // Using base64 id
+
+                  timeframe2:
+                    updatedCondition.timeframe2s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe2Id:
+                    updatedCondition.timeframe2s?.nodes?.[0]?.id || null, // Using base64 id
+
+                  timeframe3:
+                    updatedCondition.timeframe3s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe3Id:
+                    updatedCondition.timeframe3s?.nodes?.[0]?.id || null, // Using base64 id
+
+                  timeframe4:
+                    updatedCondition.timeframe4s?.nodes
+                      ?.map((t) => t.name)
+                      .join(", ") || "",
+                  timeframe4Id:
+                    updatedCondition.timeframe4s?.nodes?.[0]?.id || null, // Using base64 id
+
+                  nnc: updatedCondition.srcaConditions?.nnc ? "Yes" : "No",
+                  yearMadeReportable:
+                    updatedCondition.srcaConditions?.yearMadeReportable || "",
+                  reportableState: updatedCondition.srcaConditions
+                    ?.reportableState
+                    ? "Yes"
+                    : "No",
+                  parentDatabaseId: updatedCondition.parentDatabaseId,
+                };
+
+                console.log("Sending success result:", result);
+                options.success(result);
+              },
+              error: function (xhr, status, error) {
+                console.error("Update failed:", error);
+                console.error("XHR Response:", xhr.responseText);
+                options.error(error);
+              },
+            });
+          },
+        },
+        batch: false, // Move batch property here
+        schema: {
+          model: {
+            id: "databaseId",
+            parentId: "parentDatabaseId",
+            fields: {
+              databaseId: {type: "number", editable: false},
+              title: {type: "string", validation: {required: true}},
+              timeframe1: {type: "string", editable: false},
+              timeframe2: {type: "string", editable: false},
+              timeframe3: {type: "string", editable: false},
+              timeframe4: {type: "string", editable: false},
+              categories: {type: "string", editable: false},
+              categoryId: {type: "string", editable: true},
+              timeframe1Id: {type: "string", editable: true},
+              timeframe2Id: {type: "string", editable: true},
+              timeframe3Id: {type: "string", editable: true},
+              timeframe4Id: {type: "string", editable: true},
+              nnc: {type: "string", editable: true},
+              yearMadeReportable: {
+                type: "number",
+                editable: true,
+                nullable: true,
+              },
+              reportableState: {type: "string", editable: false}, // Set to false to make it read-only
+              parentDatabaseId: {type: "number", nullable: true},
+            },
+          },
+        },
+      });
+
+      $("#conditionsTreeList").kendoTreeList({
+        dataSource: dataSource,
+        height: "100%",
+        toolbar: [
+          "create",
+          "excel",
+          {
+            template: `
+        <div class="k-toolbar-spacer"></div>
+        <div class="custom-search-container">
+          <input type="text" id="customSearchInput" class="k-textbox" placeholder="Search by Title..."/>
+          <button id="clearSearchBtn" class="k-button k-button-icon">
+            <span class="k-icon k-i-close"></span>
+          </button>
+        </div>
+      `,
+          },
+        ],
+        excel: {
+          fileName: "SRCA - Condition Export.xlsx",
+          allPages: true,
+        },
+        messages: {
+          commands: {
+            edit: "Update Condition",
+            update: "Save",
+            canceledit: "Cancel",
+            create: "Add New Condition",
+            createchild: "Add Child Condition",
+            destroy: "Delete",
+            excel: "Export Excel",
+            pdf: "Export to PDF",
+          },
+        },
+        editable: true,
+        sortable: true,
+        // Here's the fixed version for your column definitions in the kendoTreeList initialization
+        excelExport: function (e) {
+  console.log("Starting Excel export...");
+  var workbook = e.workbook;
+  var sheet = workbook.sheets[0];
+
+  // Get visible columns from the TreeList
+  var visibleColumns = this.columns.filter(function(column) {
+    return !column.hidden && !column.command; // Exclude hidden and command columns
+  });
+
+  console.log("Visible columns:", visibleColumns);
+
+  // Helper functions (keep your existing helper functions)
+  function getTimeframeName(timeframeId, timeframeData) {
+    if (!timeframeId) return "Not Reportable";
+    const timeframe = timeframeData.find((t) => t.id === timeframeId);
+    return timeframe ? timeframe.name : "Not Reportable";
+  }
+
+  function getCategoryName(categoryId) {
+    if (!categoryId) return "Not Reportable";
+    const category = srcaCategoriesData.find((c) => c.id === categoryId);
+    return category ? category.name : "Not Reportable";
+  }
+
+  function getIndentationLevel(item) {
+    let level = 0;
+    let currentItem = item;
+    while (currentItem.parentDatabaseId) {
+      level++;
+      currentItem = this.dataSource.get(currentItem.parentDatabaseId);
+      if (!currentItem || level > 10) break;
+    }
+    return level;
+  }
+
+  function indentText(text, level) {
+    return "  ".repeat(level) + text;
+  }
+
+  // Set column widths based on visible columns
+  sheet.columns = visibleColumns.map(function(column) {
+    return { width: column.width || 150 };
+  });
+
+  // Define header cells with formatting for visible columns only
+  var headers = visibleColumns.map(function(column) {
+    return {
+      value: column.title,
+      background: "#f5f5f5",
+      textAlign: column.field === "title" ? "left" : "center"
+    };
+  });
+
+  // Set headers
+  sheet.rows[0] = {
+    cells: headers,
+    height: 25
+  };
+
+  // Process data rows with visible columns only
+  for (var rowIndex = 1; rowIndex < sheet.rows.length; rowIndex++) {
+    var dataItem = this.dataSource.view()[rowIndex - 1];
+
+    if (!dataItem) {
+      console.log(`Skipping row ${rowIndex} - no data item`);
+      continue;
+    }
+
+    const indentLevel = getIndentationLevel.call(this, dataItem);
+
+    // Create cells only for visible columns
+    var cells = visibleColumns.map(function(column) {
+      var value = "";
+      
+      switch (column.field) {
+        case "title":
+          value = indentText(dataItem.title || "", indentLevel);
+          break;
+        case "categoryId":
+          value = dataItem.categories || getCategoryName(dataItem.categoryId);
+          break;
+        case "timeframe1Id":
+          value = getTimeframeName(dataItem.timeframe1Id, timeframe1Data);
+          break;
+        case "timeframe2Id":
+          value = getTimeframeName(dataItem.timeframe2Id, timeframe2Data);
+          break;
+        case "timeframe3Id":
+          value = getTimeframeName(dataItem.timeframe3Id, timeframe3Data);
+          break;
+        case "timeframe4Id":
+          value = getTimeframeName(dataItem.timeframe4Id, timeframe4Data);
+          break;
+        case "nnc":
+          value = dataItem.nnc || "No";
+          break;
+        case "yearMadeReportable":
+          value = dataItem.yearMadeReportable || "";
+          break;
+        case "reportableState":
+          value = dataItem.reportableState || "No";
+          break;
+        default:
+          value = dataItem[column.field] || "";
+      }
+
+      return {
+        value: value,
+        textAlign: column.field === "title" ? "left" : "center",
+        verticalAlign: "center"
+      };
+    });
+
+    // Set row with formatting
+    sheet.rows[rowIndex] = {
+      cells: cells,
+      height: 25
+    };
+  }
+
+  // Add borders and other formatting to all cells
+  sheet.rows.forEach((row, rowIndex) => {
+    row.cells.forEach((cell) => {
+      cell.fontSize = 11;
+      cell.fontFamily = "Arial";
+      cell.wrap = true;
+      cell.borderBottom = {color: "#e0e0e0", size: 1};
+      cell.borderRight = {color: "#e0e0e0", size: 1};
+
+      if (rowIndex === 0) {
+        cell.bold = true;
+        cell.borderBottom = {color: "#999999", size: 1};
+      }
+
+      if (rowIndex % 2 === 1) {
+        cell.background = "#fafafa";
+      }
+    });
+  });
+
+  // Set print settings
+  sheet.printOptions = {
+    fitToWidth: 1,
+    margin: {
+      left: 0.25,
+      right: 0.25,
+      top: 0.75,
+      bottom: 0.75,
+    },
+  };
+
+  console.log("Excel export completed");
+},columns: columns,
+        edit: function (e) {
+          console.log("Editing record:", e.model);
+        },
+        save: function (e) {
+          if (!e.model.title) {
+            e.preventDefault();
+            alert("Title is required");
+          }
+        },
+        error: function (e) {
+          alert("An error occurred while saving changes. Please try again.");
+          console.error("TreeList error:", e.errors);
+        },
+      });
+
+      // Initialize search functionality after TreeList is created
+      console.log("Starting search initialization...");
+
+      var treelist = $("#conditionsTreeList").data("kendoTreeList");
+      console.log("TreeList instance:", treelist);
+
+      var searchInput = $("#customSearchInput");
+      console.log(
+        "Search input element:",
+        searchInput.length ? "Found" : "Not found"
+      );
+
+      var clearButton = $("#clearSearchBtn");
+      console.log(
+        "Clear button element:",
+        clearButton.length ? "Found" : "Not found"
+      );
+
+      var searchTimeout;
+
+      function performSearch() {
+        var searchValue = searchInput.val().trim();
+        console.log("Performing search with value:", searchValue);
+        console.log("TreeList instance in performSearch:", treelist);
+        console.log("TreeList dataSource:", treelist?.dataSource);
+
+        if (searchValue) {
+          console.log("Search value exists, applying filter");
+          clearButton.show();
+
+          try {
+            // Filter the TreeList by title only using contains operator
+            treelist.dataSource.filter({
+              field: "title",
+              operator: "contains",
+              value: searchValue,
+            });
+            console.log("Filter applied successfully");
+            console.log(
+              "Current dataSource state:",
+              treelist.dataSource.filter()
+            );
+          } catch (error) {
+            console.error("Error applying filter:", error);
+          }
+        } else {
+          console.log("No search value, clearing filter");
+          clearButton.hide();
+
+          try {
+            // Clear the filter
+            treelist.dataSource.filter({});
+            console.log("Filter cleared successfully");
+          } catch (error) {
+            console.error("Error clearing filter:", error);
+          }
+        }
+      }
+
+      // Add event handler for search input
+      searchInput.on("input", function () {
+        console.log("Search input changed:", searchInput.val());
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(performSearch, 300);
+      });
+
+      // Add event handler for clear button
+      clearButton.on("click", function () {
+        console.log("Clear button clicked");
+        searchInput.val("");
+        clearButton.hide();
+        treelist.dataSource.filter({});
+      });
+
+      // Initially hide the clear button
+      clearButton.hide();
+      console.log("Search initialization completed");
+
+      // Add dataSource event handlers to monitor filtering
+      treelist.dataSource.bind("change", function (e) {
+        console.log("DataSource changed:", e);
+        console.log("Current filter:", this.filter());
+        console.log("Total records:", this.total());
+        console.log("Current view:", this.view());
+      });
+
+      // Inside initializeTreeList function, after search initialization
+      console.log("Initializing category dropdown...");
+      console.log("Available srcaCategories:", srcaCategoriesData);
+
+      // Create the data source array with ALL option and existing categories
+      const categoryDataSource = [{name: "ALL", id: "ALL"}].concat(
+        srcaCategoriesData.map((category) => ({
+          name: category.name,
+          id: category.id,
+        }))
+      );
+
+      console.log("Category dropdown data source:", categoryDataSource);
+
+      $("#categoriesDropdown").kendoDropDownList({
+        dataTextField: "name",
+        dataValueField: "id",
+        dataSource: categoryDataSource,
+        value: "ALL",
+        change: function (e) {
+          var value = this.value();
+          var treelist = $("#conditionsTreeList").data("kendoTreeList");
+
+          console.log("Category filter changed to:", value);
+
+          if (value === "ALL") {
+            // Clear category filter
+            var currentFilter = treelist.dataSource.filter() || {};
+            var filters = currentFilter.filters || [];
+
+            // Remove category filter but keep title filter if it exists
+            var titleFilter = filters.find((f) => f.field === "title");
+            if (titleFilter) {
+              treelist.dataSource.filter({
+                field: "title",
+                operator: "contains",
+                value: titleFilter.value,
+              });
+            } else {
+              treelist.dataSource.filter({});
+            }
+          } else {
+            // Apply category filter
+            var currentFilter = treelist.dataSource.filter() || {};
+            var filters = currentFilter.filters || [];
+            var titleFilter = filters.find((f) => f.field === "title");
+
+            var newFilter = {
+              logic: "and",
+              filters: [
+                {
+                  field: "categoryId",
+                  operator: "eq",
+                  value: value,
+                },
+              ],
+            };
+
+            // Add title filter if it exists
+            if (titleFilter) {
+              newFilter.filters.push(titleFilter);
+            }
+
+            treelist.dataSource.filter(newFilter);
+          }
+        },
+      });
+
+      console.log("Category dropdown initialized");
+
+      // Remove the duplicate search initialization code from outside initializeTreeList
+      return treelist;
+    }
+  });
+</script>
+<style>
+  .k-treelist .k-command-cell .k-button {
+    min-width: 0px;
+    padding: 10px;
+  }
+
+  .custom-search-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+  }
+
+  .custom-search-container .k-textbox {
+    width: 200px;
+    padding: 4px 8px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+  }
+
+  .custom-search-container .k-button-icon {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .custom-search-container .k-button-icon:hover {
+    background: #f5f5f5;
+  }
+
+  .k-toolbar-spacer {
+    flex: 1;
+  }
+</style>
+
