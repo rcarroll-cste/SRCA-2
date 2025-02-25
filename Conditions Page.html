@@ -1061,7 +1061,23 @@ function yearMadeReportableEditor(container, options) {
       $("#conditionsTreeList").kendoTreeList({
         dataSource: dataSource,
         editable: "incell",
-        toolbar: ["create", "save", "cancel"],
+        toolbar: [
+          "create",
+          "save", 
+          "cancel",
+          "excel",
+          {
+            template: `
+              <div class="k-toolbar-spacer"></div>
+              <div class="custom-search-container">
+                <input type="text" id="customSearchInput" class="k-textbox" placeholder="Search by Title..."/>
+                <button id="clearSearchBtn" class="k-button k-button-icon">
+                  <span class="k-icon k-i-close"></span>
+                </button>
+              </div>
+            `
+          }
+        ],
         height: "100%",
         dataBound: function (e) {
             var items = e.sender.items();
@@ -1102,16 +1118,10 @@ function yearMadeReportableEditor(container, options) {
       console.log("TreeList instance:", treelist);
 
       var searchInput = $("#customSearchInput");
-      console.log(
-        "Search input element:",
-        searchInput.length ? "Found" : "Not found"
-      );
+      console.log("Search input element:", searchInput.length ? "Found" : "Not found");
 
       var clearButton = $("#clearSearchBtn");
-      console.log(
-        "Clear button element:",
-        clearButton.length ? "Found" : "Not found"
-      );
+      console.log("Clear button element:", clearButton.length ? "Found" : "Not found");
 
       var searchTimeout;
 
@@ -1130,13 +1140,10 @@ function yearMadeReportableEditor(container, options) {
             treelist.dataSource.filter({
               field: "title",
               operator: "contains",
-              value: searchValue,
+              value: searchValue
             });
             console.log("Filter applied successfully");
-            console.log(
-              "Current dataSource state:",
-              treelist.dataSource.filter()
-            );
+            console.log("Current dataSource state:", treelist.dataSource.filter());
           } catch (error) {
             console.error("Error applying filter:", error);
           }
@@ -1155,14 +1162,14 @@ function yearMadeReportableEditor(container, options) {
       }
 
       // Add event handler for search input
-      searchInput.on("input", function () {
+      searchInput.on("input", function() {
         console.log("Search input changed:", searchInput.val());
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(performSearch, 300);
       });
 
       // Add event handler for clear button
-      clearButton.on("click", function () {
+      clearButton.on("click", function() {
         console.log("Clear button clicked");
         searchInput.val("");
         clearButton.hide();
@@ -1174,7 +1181,7 @@ function yearMadeReportableEditor(container, options) {
       console.log("Search initialization completed");
 
       // Add dataSource event handlers to monitor filtering
-      treelist.dataSource.bind("change", function (e) {
+      treelist.dataSource.bind("change", function(e) {
         console.log("DataSource changed:", e);
         console.log("Current filter:", this.filter());
         console.log("Total records:", this.total());
