@@ -15,6 +15,42 @@
     let reportType3Name = "Timeframe 3";
     let reportType4Name = "Timeframe 4";
 
+    // Add scroll event listener to handle sticky behavior
+    let treeList = $("#conditionsTreeList");
+    let toolbar;
+    let header;
+    let treeListOffset;
+
+    function updateStickyElements() {
+      if (!toolbar || !header) {
+        toolbar = treeList.find(".k-grid-toolbar");
+        header = treeList.find(".k-grid-header");
+      }
+      if (!treeListOffset) {
+        treeListOffset = treeList.offset().top;
+      }
+      
+      let scrollTop = $(window).scrollTop();
+      let toolbarHeight = toolbar.outerHeight();
+      
+      if (scrollTop > treeListOffset) {
+        toolbar.addClass('sticky-toolbar');
+        header.addClass('sticky-header');
+      } else {
+        toolbar.removeClass('sticky-toolbar');
+        header.removeClass('sticky-header');
+      }
+    }
+
+    $(window).on('scroll', updateStickyElements);
+    $(window).on('resize', function() {
+      treeListOffset = treeList.offset().top;
+      updateStickyElements();
+    });
+
+    // Initial check
+    setTimeout(updateStickyElements, 500); // Wait for TreeList to fully initialize
+
     // Function to fetch all dropdown data
     Promise.all([
       // Fetch categories
@@ -1078,7 +1114,6 @@ function yearMadeReportableEditor(container, options) {
             `
           }
         ],
-        height: "100%",
         dataBound: function (e) {
             var items = e.sender.items();
             for (var i = 0; i < items.length; i++) {
@@ -1090,6 +1125,10 @@ function yearMadeReportableEditor(container, options) {
                     row.find("[data-command='createchild']").show();
                 }
             }
+
+            // Remove height calculation code
+            var gridContent = this.wrapper.find(".k-grid-content");
+            gridContent.height("auto");
         },
         columns: columns,
         edit: function (e) {
@@ -1271,54 +1310,39 @@ function yearMadeReportableEditor(container, options) {
   /* Add rounded corners to the TreeList */
   .k-treelist {
     border-radius: 15px;
-    overflow: hidden;
+    position: relative;
   }
 
-  /* Round the toolbar corners */
+  /* Toolbar and Header base styles */
   .k-treelist .k-grid-toolbar {
-    border-top-left-radius: 30px;
-    border-top-right-radius: 30px;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    background-color: #fff;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 100;
+    transition: box-shadow 0.3s ease;
   }
 
-  /* Round the pager corners if present */
-  .k-treelist .k-grid-pager {
-    border-bottom-left-radius: 30px;
-    border-bottom-right-radius: 30px;
+  .k-treelist .k-grid-header {
+    background-color: #fff;
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 99;
+    transition: box-shadow 0.3s ease;
   }
 
-  /* Ensure content doesn't overflow rounded corners */
+  /* Ensure content flows naturally */
   .k-treelist .k-grid-content {
-    overflow: hidden;
+    height: auto !important;
+    overflow-y: visible !important;
   }
 
-  /* Round the outer header cells */
-  .k-treelist .k-grid-header th:first-child {
-    border-top-left-radius: 30px;
-  }
-  .k-treelist .k-grid-header th:last-child {
-    border-top-right-radius: 30px;
-  }
-
-  /* Custom search container styling */
-  .custom-search-container {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: auto;
-  }
-
-  #customSearchInput {
-    width: 200px;
-  }
-
-  .k-grid-toolbar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-  }
-
-  .k-toolbar-spacer {
-    flex: 1;
+  /* Remove fixed height */
+  #conditionsTreeList {
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    height: auto !important;
   }
 </style>
