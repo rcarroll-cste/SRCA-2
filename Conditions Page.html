@@ -1266,32 +1266,56 @@ function yearMadeReportableEditor(container, options) {
 <style>
   .k-treelist .k-command-cell .k-button {
     min-width: 0px;
-    padding: 10px;
   }
 
+  /* Add rounded corners to the TreeList */
+  .k-treelist {
+    border-radius: 15px;
+    overflow: hidden;
+  }
+
+  /* Round the toolbar corners */
+  .k-treelist .k-grid-toolbar {
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+  }
+
+  /* Round the pager corners if present */
+  .k-treelist .k-grid-pager {
+    border-bottom-left-radius: 30px;
+    border-bottom-right-radius: 30px;
+  }
+
+  /* Ensure content doesn't overflow rounded corners */
+  .k-treelist .k-grid-content {
+    overflow: hidden;
+  }
+
+  /* Round the outer header cells */
+  .k-treelist .k-grid-header th:first-child {
+    border-top-left-radius: 30px;
+  }
+  .k-treelist .k-grid-header th:last-child {
+    border-top-right-radius: 30px;
+  }
+
+  /* Custom search container styling */
   .custom-search-container {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 16px;
+    margin-left: auto;
   }
 
-  .custom-search-container .k-textbox {
+  #customSearchInput {
     width: 200px;
-    padding: 4px 8px;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
   }
 
-  .custom-search-container .k-button-icon {
-    padding: 4px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .custom-search-container .k-button-icon:hover {
-    background: #f5f5f5;
+  .k-grid-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
   }
 
   .k-toolbar-spacer {
