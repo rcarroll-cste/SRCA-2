@@ -1303,46 +1303,203 @@ function yearMadeReportableEditor(container, options) {
   });
 </script>
 <style>
-  .k-treelist .k-command-cell .k-button {
-    min-width: 0px;
-  }
-
-  /* Add rounded corners to the TreeList */
+  /* Base styles */
   .k-treelist {
-    border-radius: 15px;
     position: relative;
   }
 
-  /* Toolbar and Header base styles */
-  .k-treelist .k-grid-toolbar {
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
-    background-color: #fff;
-    width: 100%;
-    box-sizing: border-box;
-    z-index: 100;
-    transition: box-shadow 0.3s ease;
+  /* Fixed positioning styles */
+  .sticky-toolbar {
+    position: fixed !important;
+    top: 32px; /* WP admin bar height */
+    background: #fff;
+    z-index: 1001;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-bottom: 1px solid #ddd;
   }
 
-  .k-treelist .k-grid-header {
-    background-color: #fff;
-    width: 100%;
-    box-sizing: border-box;
-    z-index: 99;
-    transition: box-shadow 0.3s ease;
+  .sticky-header {
+    position: fixed !important;
+    background: #fff;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   }
 
-  /* Ensure content flows naturally */
-  .k-treelist .k-grid-content {
-    height: auto !important;
-    overflow-y: visible !important;
+  /* Spacers to prevent content jump when elements become fixed */
+  .toolbar-spacer {
+    display: none;
   }
 
-  /* Remove fixed height */
-  #conditionsTreeList {
-    width: 100%;
-    margin: 0 auto;
-    position: relative;
-    height: auto !important;
+  .header-spacer {
+    display: none;
+  }
+
+  /* When elements are fixed, show the spacers */
+  .toolbar-spacer.active {
+    display: block;
+  }
+
+  .header-spacer.active {
+    display: block;
   }
 </style>
+
+<script>
+$(document).ready(function() {
+    // Wait for TreeList to be fully initialized
+    setTimeout(function() {
+        setupStickyHeader();
+    }, 2000);
+    
+    function setupStickyHeader() {
+        console.log("Starting setupStickyHeader...");
+        var $window = $(window);
+        var $treeList = $('#conditionsTreeList');
+        
+        if (!$treeList.length) {
+            console.error("TreeList element not found! Selector: #conditionsTreeList");
+            return;
+        }
+        
+        console.log("TreeList found:", $treeList.length > 0);
+        
+        // Try multiple selectors to find toolbar and header
+        var $toolbarArea = $treeList.find('.k-grid-toolbar');
+        if (!$toolbarArea.length) {
+            $toolbarArea = $treeList.find('.k-toolbar');
+        }
+        if (!$toolbarArea.length) {
+            $toolbarArea = $treeList.find('.k-treelist-toolbar');
+        }
+        
+        var $headerArea = $treeList.find('.k-grid-header');
+        if (!$headerArea.length) {
+            $headerArea = $treeList.find('.k-treelist-header');
+        }
+        if (!$headerArea.length) {
+            $headerArea = $treeList.find('thead').closest('table').parent();
+        }
+        
+        console.log("Element detection results:", {
+            treeListExists: $treeList.length > 0,
+            toolbarExists: $toolbarArea.length > 0,
+            toolbarSelector: $toolbarArea.length > 0 ? $toolbarArea.prop('class') : 'Not found',
+            headerExists: $headerArea.length > 0,
+            headerSelector: $headerArea.length > 0 ? $headerArea.prop('class') : 'Not found'
+        });
+        
+        // If we still can't find the elements, try waiting a bit longer and try again
+        if (!$toolbarArea.length || !$headerArea.length) {
+            console.log("Some elements not found, will try again in 1 second");
+            setTimeout(setupStickyHeader, 1000);
+            return;
+        }
+        
+        // Create spacers to prevent content jump when elements become fixed
+        var $toolbarSpacer = $('<div class="toolbar-spacer"></div>');
+        var $headerSpacer = $('<div class="header-spacer"></div>');
+        
+        $toolbarArea.after($toolbarSpacer);
+        $headerArea.after($headerSpacer);
+        
+        // Get initial positions and dimensions
+        var treeListOffset = $treeList.offset().top;
+        var toolbarHeight = $toolbarArea.outerHeight();
+        var headerHeight = $headerArea.outerHeight();
+        var adminBarHeight = $('#wpadminbar').length ? $('#wpadminbar').height() : 0;
+        
+        console.log("Initial measurements:", {
+            treeListOffset: treeListOffset,
+            toolbarHeight: toolbarHeight,
+            headerHeight: headerHeight,
+            adminBarHeight: adminBarHeight
+        });
+        
+        // Update spacer heights
+        $toolbarSpacer.height(toolbarHeight);
+        $headerSpacer.height(headerHeight);
+        
+        // Handle scroll events
+        $window.on('scroll', function() {
+            var scrollTop = $window.scrollTop();
+            var treeListWidth = $treeList.outerWidth();
+            var treeListLeft = $treeList.offset().left;
+            
+            // Debug scroll position occasionally
+            if (scrollTop % 100 === 0) {
+                console.log("Scroll position:", {
+                    scrollTop: scrollTop,
+                    threshold: treeListOffset - adminBarHeight,
+                    isSticky: scrollTop > (treeListOffset - adminBarHeight)
+                });
+            }
+            
+            if (scrollTop > (treeListOffset - adminBarHeight)) {
+                // Make toolbar sticky
+                $toolbarArea.addClass('sticky-toolbar');
+                $toolbarSpacer.addClass('active');
+                $toolbarArea.css({
+                    width: treeListWidth,
+                    left: treeListLeft
+                });
+                
+                // Make header sticky, positioned below the toolbar
+                $headerArea.addClass('sticky-header');
+                $headerSpacer.addClass('active');
+                $headerArea.css({
+                    width: treeListWidth,
+                    left: treeListLeft,
+                    top: adminBarHeight + toolbarHeight + 'px'
+                });
+            } else {
+                // Remove sticky positioning
+                $toolbarArea.removeClass('sticky-toolbar');
+                $toolbarSpacer.removeClass('active');
+                $toolbarArea.css({
+                    width: '',
+                    left: ''
+                });
+                
+                $headerArea.removeClass('sticky-header');
+                $headerSpacer.removeClass('active');
+                $headerArea.css({
+                    width: '',
+                    left: '',
+                    top: ''
+                });
+            }
+        });
+        
+        // Handle window resize
+        $window.on('resize', function() {
+            treeListOffset = $treeList.offset().top;
+            var treeListWidth = $treeList.outerWidth();
+            var treeListLeft = $treeList.offset().left;
+            
+            // Update dimensions for sticky elements if they're currently sticky
+            if ($toolbarArea.hasClass('sticky-toolbar')) {
+                $toolbarArea.css({
+                    width: treeListWidth,
+                    left: treeListLeft
+                });
+                
+                $headerArea.css({
+                    width: treeListWidth,
+                    left: treeListLeft
+                });
+            }
+            
+            // Update spacer heights in case they've changed
+            toolbarHeight = $toolbarArea.outerHeight();
+            headerHeight = $headerArea.outerHeight();
+            $toolbarSpacer.height(toolbarHeight);
+            $headerSpacer.height(headerHeight);
+        });
+        
+        // Trigger scroll handler once to set initial state
+        $window.trigger('scroll');
+        
+        console.log("Sticky header setup complete");
+    }
+});
+</script>
