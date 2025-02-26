@@ -288,14 +288,14 @@ function yearMadeReportableEditor(container, options) {
     value: currentYear - i
   }));
 
-  $('<input required name="' + options.field + '"/>')
+  var dropDown = $('<input required name="' + options.field + '"/>')
     .appendTo(container)
     .kendoDropDownList({
       dataTextField: "text",
       dataValueField: "value",
       dataSource: years,
       //optionLabel: "Select year",
-      value: options.model.yearMadeReportable || currentYear,
+      
       change: function(e) {
         const selectedYear = this.value();
         console.log("Selected year:", selectedYear);
@@ -308,7 +308,22 @@ function yearMadeReportableEditor(container, options) {
           modelState: options.model
         });
       }
-    });
+    }).data("kendoDropDownList");
+    
+  // Set value after initialization with a longer delay
+  setTimeout(function() {
+    try {
+      if (options.model.yearMadeReportable) {
+        dropDown.value(options.model.yearMadeReportable);
+        console.log("Year dropdown value set to:", options.model.yearMadeReportable);
+      } else {
+        console.log("No year value to set, using current year");
+        dropDown.value(currentYear);
+      }
+    } catch (error) {
+      console.error("Error setting year value:", error);
+    }
+  }, 100);
 }
 
     function initializeTreeList(stateId) {
@@ -380,18 +395,44 @@ function yearMadeReportableEditor(container, options) {
                 dataTextField: "name",
                 dataValueField: "id",
                 dataSource: srcaCategoriesData,
-                //optionLabel: "Select a category",
+                change: function(e) {
+                  const selectedValue = this.value();
+                  console.log("Selected category:", selectedValue);
+                  
+                  // Update the model with the selected value
+                  options.model.set("categoryId", selectedValue);
+                  
+                  console.log("Updated model:", {
+                    categoryId: options.model.categoryId,
+                    modelState: options.model
+                  });
+                }
               })
               .data("kendoDropDownList");
 
-            // Set value after initialization
+            // Set value after initialization with a longer delay
             setTimeout(function () {
-              dropDown.value(options.model.categoryId);
-              console.log(
-                "Category dropdown value set to:",
-                options.model.categoryId
-              );
-            }, 0);
+              try {
+                if (options.model.categoryId) {
+                  dropDown.value(options.model.categoryId);
+                  console.log(
+                    "Category dropdown value set to:",
+                    options.model.categoryId
+                  );
+                } else {
+                  console.log("No category ID to set");
+                  // Set a default value if needed
+                  if (srcaCategoriesData && srcaCategoriesData.length > 0) {
+                    dropDown.select(0);
+                    // Update the model with the default value
+                    options.model.set("categoryId", dropDown.value());
+                    console.log("Set default category:", dropDown.value());
+                  }
+                }
+              } catch (error) {
+                console.error("Error setting category value:", error);
+              }
+            }, 100);
           },
         },
       ];
@@ -414,17 +455,44 @@ function yearMadeReportableEditor(container, options) {
                 dataTextField: "name",
                 dataValueField: "id",
                 dataSource: timeframe1Data,
-                //optionLabel: "Select " + reportType1Name.toLowerCase(), // Updated placeholder
+                change: function(e) {
+                  const selectedValue = this.value();
+                  console.log("Selected timeframe1:", selectedValue);
+                  
+                  // Update the model with the selected value
+                  options.model.set("timeframe1Id", selectedValue);
+                  
+                  console.log("Updated model:", {
+                    timeframe1Id: options.model.timeframe1Id,
+                    modelState: options.model
+                  });
+                }
               })
               .data("kendoDropDownList");
 
+            // Set value after initialization with a longer delay
             setTimeout(function () {
-              dropDown.value(options.model.timeframe1Id);
-              console.log(
-                "Timeframe1 dropdown value set to:",
-                options.model.timeframe1Id
-              );
-            }, 0);
+              try {
+                if (options.model.timeframe1Id) {
+                  dropDown.value(options.model.timeframe1Id);
+                  console.log(
+                    "Timeframe1 dropdown value set to:",
+                    options.model.timeframe1Id
+                  );
+                } else {
+                  console.log("No timeframe1 ID to set");
+                  // Set a default value if needed
+                  if (timeframe1Data && timeframe1Data.length > 0) {
+                    dropDown.select(0);
+                    // Update the model with the default value
+                    options.model.set("timeframe1Id", dropDown.value());
+                    console.log("Set default timeframe1:", dropDown.value());
+                  }
+                }
+              } catch (error) {
+                console.error("Error setting timeframe1 value:", error);
+              }
+            }, 100);
           },
         });
       }
@@ -447,17 +515,44 @@ function yearMadeReportableEditor(container, options) {
                 dataTextField: "name",
                 dataValueField: "id",
                 dataSource: timeframe2Data,
-               // optionLabel: "Select " + reportType2Name.toLowerCase(), // Updated placeholder
+                change: function(e) {
+                  const selectedValue = this.value();
+                  console.log("Selected timeframe2:", selectedValue);
+                  
+                  // Update the model with the selected value
+                  options.model.set("timeframe2Id", selectedValue);
+                  
+                  console.log("Updated model:", {
+                    timeframe2Id: options.model.timeframe2Id,
+                    modelState: options.model
+                  });
+                }
               })
               .data("kendoDropDownList");
 
+            // Set value after initialization with a longer delay
             setTimeout(function () {
-              dropDown.value(options.model.timeframe2Id);
-              console.log(
-                "Timeframe2 dropdown value set to:",
-                options.model.timeframe2Id
-              );
-            }, 0);
+              try {
+                if (options.model.timeframe2Id) {
+                  dropDown.value(options.model.timeframe2Id);
+                  console.log(
+                    "Timeframe2 dropdown value set to:",
+                    options.model.timeframe2Id
+                  );
+                } else {
+                  console.log("No timeframe2 ID to set");
+                  // Set a default value if needed
+                  if (timeframe2Data && timeframe2Data.length > 0) {
+                    dropDown.select(0);
+                    // Update the model with the default value
+                    options.model.set("timeframe2Id", dropDown.value());
+                    console.log("Set default timeframe2:", dropDown.value());
+                  }
+                }
+              } catch (error) {
+                console.error("Error setting timeframe2 value:", error);
+              }
+            }, 100);
           },
         });
       }
@@ -480,17 +575,44 @@ function yearMadeReportableEditor(container, options) {
                 dataTextField: "name",
                 dataValueField: "id",
                 dataSource: timeframe3Data,
-               // optionLabel: "Select " + reportType3Name.toLowerCase(), // Updated placeholder
+                change: function(e) {
+                  const selectedValue = this.value();
+                  console.log("Selected timeframe3:", selectedValue);
+                  
+                  // Update the model with the selected value
+                  options.model.set("timeframe3Id", selectedValue);
+                  
+                  console.log("Updated model:", {
+                    timeframe3Id: options.model.timeframe3Id,
+                    modelState: options.model
+                  });
+                }
               })
               .data("kendoDropDownList");
 
+            // Set value after initialization with a longer delay
             setTimeout(function () {
-              dropDown.value(options.model.timeframe3Id);
-              console.log(
-                "Timeframe3 dropdown value set to:",
-                options.model.timeframe3Id
-              );
-            }, 0);
+              try {
+                if (options.model.timeframe3Id) {
+                  dropDown.value(options.model.timeframe3Id);
+                  console.log(
+                    "Timeframe3 dropdown value set to:",
+                    options.model.timeframe3Id
+                  );
+                } else {
+                  console.log("No timeframe3 ID to set");
+                  // Set a default value if needed
+                  if (timeframe3Data && timeframe3Data.length > 0) {
+                    dropDown.select(0);
+                    // Update the model with the default value
+                    options.model.set("timeframe3Id", dropDown.value());
+                    console.log("Set default timeframe3:", dropDown.value());
+                  }
+                }
+              } catch (error) {
+                console.error("Error setting timeframe3 value:", error);
+              }
+            }, 100);
           },
         });
       }
@@ -513,17 +635,44 @@ function yearMadeReportableEditor(container, options) {
                 dataTextField: "name",
                 dataValueField: "id",
                 dataSource: timeframe4Data,
-               // optionLabel: "Select " + reportType4Name.toLowerCase(), // Updated placeholder
+                change: function(e) {
+                  const selectedValue = this.value();
+                  console.log("Selected timeframe4:", selectedValue);
+                  
+                  // Update the model with the selected value
+                  options.model.set("timeframe4Id", selectedValue);
+                  
+                  console.log("Updated model:", {
+                    timeframe4Id: options.model.timeframe4Id,
+                    modelState: options.model
+                  });
+                }
               })
               .data("kendoDropDownList");
 
+            // Set value after initialization with a longer delay
             setTimeout(function () {
-              dropDown.value(options.model.timeframe4Id);
-              console.log(
-                "Timeframe4 dropdown value set to:",
-                options.model.timeframe4Id
-              );
-            }, 0);
+              try {
+                if (options.model.timeframe4Id) {
+                  dropDown.value(options.model.timeframe4Id);
+                  console.log(
+                    "Timeframe4 dropdown value set to:",
+                    options.model.timeframe4Id
+                  );
+                } else {
+                  console.log("No timeframe4 ID to set");
+                  // Set a default value if needed
+                  if (timeframe4Data && timeframe4Data.length > 0) {
+                    dropDown.select(0);
+                    // Update the model with the default value
+                    options.model.set("timeframe4Id", dropDown.value());
+                    console.log("Set default timeframe4:", dropDown.value());
+                  }
+                }
+              } catch (error) {
+                console.error("Error setting timeframe4 value:", error);
+              }
+            }, 100);
           },
         });
       }
@@ -541,14 +690,41 @@ function yearMadeReportableEditor(container, options) {
               .appendTo(container)
               .kendoDropDownList({
                 dataSource: ["Yes", "No"],
-               // optionLabel: "Select Yes/No",
+                change: function(e) {
+                  const selectedValue = this.value();
+                  console.log("Selected NNC:", selectedValue);
+                  
+                  // Update the model with the selected value
+                  options.model.set("nnc", selectedValue);
+                  
+                  console.log("Updated model:", {
+                    nnc: options.model.nnc,
+                    modelState: options.model
+                  });
+                }
               })
               .data("kendoDropDownList");
 
+            // Set value after initialization with a longer delay
             setTimeout(function () {
-              dropDown.value(options.model.nnc);
-              console.log("NNC dropdown value set to:", options.model.nnc);
-            }, 0);
+              try {
+                if (options.model.nnc) {
+                  dropDown.value(options.model.nnc);
+                  console.log("NNC dropdown value set to:", options.model.nnc);
+                } else {
+                  console.log("No NNC value to set");
+                  // Set a default value if needed
+                  if (["Yes", "No"].length > 0) {
+                    dropDown.select(0);
+                    // Update the model with the default value
+                    options.model.set("nnc", dropDown.value());
+                    console.log("Set default NNC:", dropDown.value());
+                  }
+                }
+              } catch (error) {
+                console.error("Error setting NNC value:", error);
+              }
+            }, 100);
           },
         },
         {
@@ -690,6 +866,29 @@ function yearMadeReportableEditor(container, options) {
             const model = options.data;
             console.log("Create model data:", model); // Let's first check what data we're receiving
 
+            // Set default values if not provided
+            if (!model.categoryId && srcaCategoriesData.length > 0) {
+              model.categoryId = srcaCategoriesData[0].id;
+            }
+            if (!model.timeframe1Id && timeframe1Data.length > 0) {
+              model.timeframe1Id = timeframe1Data[0].id;
+            }
+            if (!model.timeframe2Id && timeframe2Data.length > 0) {
+              model.timeframe2Id = timeframe2Data[0].id;
+            }
+            if (!model.timeframe3Id && timeframe3Data.length > 0) {
+              model.timeframe3Id = timeframe3Data[0].id;
+            }
+            if (!model.timeframe4Id && timeframe4Data.length > 0) {
+              model.timeframe4Id = timeframe4Data[0].id;
+            }
+            if (!model.nnc) {
+              model.nnc = "No";
+            }
+            if (!model.yearMadeReportable) {
+              model.yearMadeReportable = new Date().getFullYear();
+            }
+
             // Calculate reportable state
             const isReportable = calculateReportableState(
               model.timeframe1Id,
@@ -706,34 +905,36 @@ function yearMadeReportableEditor(container, options) {
                 ? String(model.parentDatabaseId)
                 : null,
               nnc: model.nnc === "Yes",
-              yearMadeReportable: model.yearMadeReportable ? parseInt(model.yearMadeReportable, 10) : null,
+              yearMadeReportable: model.yearMadeReportable
+                ? parseInt(model.yearMadeReportable, 10)
+                : null,
               reportableState: isReportable === "Yes",
               conditionState: stateId,
 
-              // Add taxonomy connections by default with empty arrays if not provided
+              // Add taxonomy connections with default values if not provided
               srcaCategories: {
                 append: false,
-                nodes: model.categoryId ? [{id: model.categoryId}] : [], // Changed from databaseId to id
+                nodes: [{id: model.categoryId || (srcaCategoriesData.length > 0 ? srcaCategoriesData[0].id : "")}],
               },
               timeframe1s: {
                 append: false,
-                nodes: model.timeframe1Id ? [{id: model.timeframe1Id}] : [], // Changed from databaseId to id
+                nodes: [{id: model.timeframe1Id || (timeframe1Data.length > 0 ? timeframe1Data[0].id : "")}],
               },
               timeframe2s: {
                 append: false,
-                nodes: model.timeframe2Id ? [{id: model.timeframe2Id}] : [], // Changed from databaseId to id
+                nodes: [{id: model.timeframe2Id || (timeframe2Data.length > 0 ? timeframe2Data[0].id : "")}],
               },
               timeframe3s: {
                 append: false,
-                nodes: model.timeframe3Id ? [{id: model.timeframe3Id}] : [], // Changed from databaseId to id
+                nodes: [{id: model.timeframe3Id || (timeframe3Data.length > 0 ? timeframe3Data[0].id : "")}],
               },
               timeframe4s: {
                 append: false,
-                nodes: model.timeframe4Id ? [{id: model.timeframe4Id}] : [], // Changed from databaseId to id
+                nodes: [{id: model.timeframe4Id || (timeframe4Data.length > 0 ? timeframe4Data[0].id : "")}],
               },
             };
 
-            console.log("Create input with taxonomies:", createInput);
+            console.log("Sending create with input:", createInput);
 
             $.ajax({
               url: "/graphql",
@@ -1076,19 +1277,65 @@ function yearMadeReportableEditor(container, options) {
               timeframe3: {type: "string", editable: false},
               timeframe4: {type: "string", editable: false},
               categories: {type: "string", editable: false},
-              categoryId: {type: "string", editable: true},
-              timeframe1Id: {type: "string", editable: true},
-              timeframe2Id: {type: "string", editable: true},
-              timeframe3Id: {type: "string", editable: true},
-              timeframe4Id: {type: "string", editable: true},
-              nnc: {type: "string", editable: true},
+              categoryId: { 
+                type: "string", 
+                editable: true, 
+                defaultValue: srcaCategoriesData.length > 0 ? srcaCategoriesData[0].id : "",
+                parse: function(value) {
+                  return value || (srcaCategoriesData.length > 0 ? srcaCategoriesData[0].id : "");
+                }
+              },
+              timeframe1Id: { 
+                type: "string", 
+                editable: true, 
+                defaultValue: timeframe1Data.length > 0 ? timeframe1Data[0].id : "",
+                parse: function(value) {
+                  return value || (timeframe1Data.length > 0 ? timeframe1Data[0].id : "");
+                }
+              },
+              timeframe2Id: { 
+                type: "string", 
+                editable: true, 
+                defaultValue: timeframe2Data.length > 0 ? timeframe2Data[0].id : "",
+                parse: function(value) {
+                  return value || (timeframe2Data.length > 0 ? timeframe2Data[0].id : "");
+                }
+              },
+              timeframe3Id: { 
+                type: "string", 
+                editable: true, 
+                defaultValue: timeframe3Data.length > 0 ? timeframe3Data[0].id : "",
+                parse: function(value) {
+                  return value || (timeframe3Data.length > 0 ? timeframe3Data[0].id : "");
+                }
+              },
+              timeframe4Id: { 
+                type: "string", 
+                editable: true, 
+                defaultValue: timeframe4Data.length > 0 ? timeframe4Data[0].id : "",
+                parse: function(value) {
+                  return value || (timeframe4Data.length > 0 ? timeframe4Data[0].id : "");
+                }
+              },
+              nnc: { 
+                type: "string", 
+                editable: true, 
+                defaultValue: "No",
+                parse: function(value) {
+                  return value || "No";
+                }
+              },
               yearMadeReportable: {
                 type: "number",
                 editable: true,
                 nullable: true,
+                defaultValue: new Date().getFullYear(),
+                parse: function(value) {
+                  return value || new Date().getFullYear();
+                }
               },
-              reportableState: {type: "string", editable: false}, // Set to false to make it read-only
-              parentDatabaseId: {type: "number", nullable: true},
+              reportableState: { type: "string", editable: false },
+              parentDatabaseId: { type: "number", nullable: true },
             },
           },
         },
@@ -1133,6 +1380,36 @@ function yearMadeReportableEditor(container, options) {
         columns: columns,
         edit: function (e) {
           console.log("Editing record:", e.model);
+          
+          // Ensure model has default values for all fields if they're not set
+          if (!e.model.categoryId && srcaCategoriesData.length > 0) {
+            e.model.set("categoryId", srcaCategoriesData[0].id);
+          }
+          
+          if (!e.model.timeframe1Id && timeframe1Data.length > 0) {
+            e.model.set("timeframe1Id", timeframe1Data[0].id);
+          }
+          
+          if (!e.model.timeframe2Id && timeframe2Data.length > 0) {
+            e.model.set("timeframe2Id", timeframe2Data[0].id);
+          }
+          
+          if (!e.model.timeframe3Id && timeframe3Data.length > 0) {
+            e.model.set("timeframe3Id", timeframe3Data[0].id);
+          }
+          
+          if (!e.model.timeframe4Id && timeframe4Data.length > 0) {
+            e.model.set("timeframe4Id", timeframe4Data[0].id);
+          }
+          
+          if (!e.model.nnc) {
+            e.model.set("nnc", "No");
+          }
+          
+          if (!e.model.yearMadeReportable) {
+            e.model.set("yearMadeReportable", new Date().getFullYear());
+          }
+          
           var input = e.container.find("input,select");
           setTimeout(function() {
             input.focus();
@@ -1307,6 +1584,10 @@ function yearMadeReportableEditor(container, options) {
   /* Base styles */
   .k-treelist {
     position: relative;
+  }
+
+  .k-dirty {
+    color: red;
   }
 
   /* Fixed positioning styles */
