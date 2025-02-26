@@ -1139,11 +1139,12 @@ function yearMadeReportableEditor(container, options) {
           });
         },
         save: function (e) {
-          if (!e.model.title) {
-            e.preventDefault();
-            alert("Title is required");
-          }
-        },
+  // Only validate title if the title field is being edited
+  if (e.values && e.values.hasOwnProperty('title') && !e.values.title) {
+    e.preventDefault();
+    alert("Title is required");
+  }
+},
         error: function (e) {
           alert("An error occurred while saving changes. Please try again.");
           console.error("TreeList error:", e.errors);
