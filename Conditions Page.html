@@ -372,23 +372,9 @@ function yearMadeReportableEditor(container, options) {
           expandable: true,
           title: "Condition",
           width: 250,
-          editor: function(container, options) {
-            console.log("Title Editor - Current Value:", options.model.title);
-            
-            // Check if this is an update (has databaseId) or a new condition
-            if (options.model.databaseId) {
-              // For update mode, display as read-only
-              $('<span>' + options.model.title + '</span>')
-                .appendTo(container);
-            } else {
-              // For new conditions, show regular input
-              $('<input required name="' + options.field + '" class="k-textbox" />')
-                .val(options.model.title || "")
-                .appendTo(container)
-                .on('input', function() {
-                  options.model.set("title", this.value);
-                });
-            }
+          editable: function(dataItem) {
+            // Return true for new conditions (no databaseId), false for existing ones
+            return !dataItem.databaseId;
           }
         },
         {
@@ -698,60 +684,21 @@ function yearMadeReportableEditor(container, options) {
           template: function(dataItem) {
             return dataItem.nnc || "No";
           },
-          editor: function (container, options) {
-            console.log("NNC Editor - Current Value:", options.model.nnc);
-
-            // Check if this is an update (has databaseId) or a new condition
-            if (options.model.databaseId) {
-              // For update mode, display as read-only
-              $('<span>' + (options.model.nnc || "No") + '</span>')
-                .appendTo(container);
-            } else {
-              // For new conditions, show dropdown
-              var dropDown = $('<input required name="' + options.field + '"/>')
-                .appendTo(container)
-                .kendoDropDownList({
-                  dataSource: ["Yes", "No"],
-                  change: function(e) {
-                    const selectedValue = this.value();
-                    console.log("Selected NNC:", selectedValue);
-                    
-                    // Update the model with the selected value
-                    options.model.set("nnc", selectedValue);
-                    
-                    console.log("Updated model:", {
-                      nnc: options.model.nnc,
-                      modelState: options.model
-                    });
-                  }
-                })
-                .data("kendoDropDownList");
-
-              // Set value after initialization with a longer delay
-              setTimeout(function () {
-                try {
-                  if (options.model.nnc) {
-                    dropDown.value(options.model.nnc);
-                    console.log("NNC dropdown value set to:", options.model.nnc);
-                  } else {
-                    console.log("No NNC value to set");
-                  }
-                } catch (error) {
-                  console.error("Error setting NNC value:", error);
-                }
-              }, 100);
-            }
+          editable: function(dataItem) {
+            // Return true for new conditions (no databaseId), false for existing ones
+            return !dataItem.databaseId;
           },
+          editor: "boolean"
         },
         {
-  field: "yearMadeReportable",
-  title: "Year Made Reportable",
-  width: 100,
-  editor: yearMadeReportableEditor,
-  template: function(dataItem) {
-    return dataItem.yearMadeReportable || "";
-  }
-},
+          field: "yearMadeReportable",
+          title: "Year Made Reportable",
+          width: 100,
+          editor: yearMadeReportableEditor,
+          template: function(dataItem) {
+            return dataItem.yearMadeReportable || "";
+          }
+        },
         {
           field: "reportableState",
           title: "Reportable State",
@@ -1311,11 +1258,11 @@ function yearMadeReportableEditor(container, options) {
                 }
               },
               nnc: { 
-                type: "string", 
+                type: "boolean", 
                 editable: true, 
-                defaultValue: "",
+                defaultValue: false,
                 parse: function(value) {
-                  return value || "";
+                  return value || false;
                 }
               },
               yearMadeReportable: {
@@ -1493,7 +1440,6 @@ function yearMadeReportableEditor(container, options) {
         change: function (e) {
           var value = this.value();
           var treelist = $("#conditionsTreeList").data("kendoTreeList");
-
           console.log("Category filter changed to:", value);
 
           if (value === "ALL") {
