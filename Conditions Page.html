@@ -1352,70 +1352,126 @@ function yearMadeReportableEditor(container, options) {
           console.log("Editing record:", e.model);
           
           try {
-            // Check if this is a new child record (has parentId but no existing databaseId)
-            if (e.model.parentDatabaseId && !e.model.databaseId) {
-              console.log("[CATEGORY COPY] New child record detected with parent ID:", e.model.parentDatabaseId);
-              
-              // Get a reference to the treelist
-              var treelist = $("#conditionsTreeList").data("kendoTreeList");
-              if (!treelist) {
-                console.error("[CATEGORY COPY] TreeList not found");
-                return;
-              }
-              
-              // Try to get the data from the treelist
-              var allItems = treelist.dataSource.data();
-              console.log("[CATEGORY COPY] Got data items, count:", allItems.length);
-              
-              // Loop through all items to find the parent
-              var foundParent = null;
-              for (var i = 0; i < allItems.length; i++) {
-                if (allItems[i].databaseId === e.model.parentDatabaseId) {
-                  foundParent = allItems[i];
-                  console.log("[CATEGORY COPY] Parent found:", foundParent);
-                  break;
+            // Check if this is a new record (has no databaseId)
+            if (!e.model.databaseId) {
+              // Case 1: This is a child record (has parentId)
+              if (e.model.parentDatabaseId) {
+                console.log("[CATEGORY COPY] New child record detected with parent ID:", e.model.parentDatabaseId);
+                
+                // Get a reference to the treelist
+                var treelist = $("#conditionsTreeList").data("kendoTreeList");
+                if (!treelist) {
+                  console.error("[CATEGORY COPY] TreeList not found");
+                  return;
                 }
-              }
-              
-              // If parent is found and has a category, apply it to the child
-              if (foundParent && foundParent.categoryId) {
-                console.log("[CATEGORY COPY] Parent category found:", foundParent.categoryId);
                 
-                // Set the category of the child record to match the parent's category
-                e.model.set("categoryId", foundParent.categoryId);
-                console.log("[CATEGORY COPY] Child category set to:", foundParent.categoryId);
+                // Try to get the data from the treelist
+                var allItems = treelist.dataSource.data();
+                console.log("[CATEGORY COPY] Got data items, count:", allItems.length);
                 
-                // Set a timeout to explicitly update the category cell after the model has been updated
-                setTimeout(function() {
-                  // Get the newly added row by its unique ID
-                  var addedRow = treelist.tbody.find("tr[data-uid='" + e.model.uid + "']");
-                  if (addedRow.length) {
-                    // Get the category cell (index 1 is typically the category column, adjust if needed)
-                    var categoryCell = addedRow.find("td:eq(1)");
-                    if (categoryCell.length) {
-                      // Get the category display name
-                      var categoryName = "";
-                      for (var j = 0; j < srcaCategoriesData.length; j++) {
-                        if (srcaCategoriesData[j].id === foundParent.categoryId) {
-                          categoryName = srcaCategoriesData[j].name;
-                          break;
+                // Loop through all items to find the parent
+                var foundParent = null;
+                for (var i = 0; i < allItems.length; i++) {
+                  if (allItems[i].databaseId === e.model.parentDatabaseId) {
+                    foundParent = allItems[i];
+                    console.log("[CATEGORY COPY] Parent found:", foundParent);
+                    break;
+                  }
+                }
+                
+                // If parent is found and has a category, apply it to the child
+                if (foundParent && foundParent.categoryId) {
+                  console.log("[CATEGORY COPY] Parent category found:", foundParent.categoryId);
+                  
+                  // Set the category of the child record to match the parent's category
+                  e.model.set("categoryId", foundParent.categoryId);
+                  console.log("[CATEGORY COPY] Child category set to:", foundParent.categoryId);
+                  
+                  // Set a timeout to explicitly update the category cell after the model has been updated
+                  setTimeout(function() {
+                    // Get the newly added row by its unique ID
+                    var addedRow = treelist.tbody.find("tr[data-uid='" + e.model.uid + "']");
+                    if (addedRow.length) {
+                      // Get the category cell (index 1 is typically the category column, adjust if needed)
+                      var categoryCell = addedRow.find("td:eq(1)");
+                      if (categoryCell.length) {
+                        // Get the category display name
+                        var categoryName = "";
+                        for (var j = 0; j < srcaCategoriesData.length; j++) {
+                          if (srcaCategoriesData[j].id === foundParent.categoryId) {
+                            categoryName = srcaCategoriesData[j].name;
+                            break;
+                          }
                         }
-                      }
-                      
-                      // Update the cell content with the category name
-                      if (categoryName) {
-                        console.log("[CATEGORY COPY] Updating category cell with name:", categoryName);
-                        categoryCell.text(categoryName);
+                        
+                        // Update the cell content with the category name
+                        if (categoryName) {
+                          console.log("[CATEGORY COPY] Updating category cell with name:", categoryName);
+                          categoryCell.text(categoryName);
+                        }
+                      } else {
+                        console.log("[CATEGORY COPY] Category cell not found");
                       }
                     } else {
-                      console.log("[CATEGORY COPY] Category cell not found");
+                      console.log("[CATEGORY COPY] Added row not found");
+                    }
+                  }, 50); // Short delay to ensure the row has been rendered
+                } else {
+                  console.log("[CATEGORY COPY] Parent not found or has no category");
+                }
+              } 
+              // Case 2: This is a brand new record (no parent)
+              else {
+                console.log("[CATEGORY DEFAULT] New top-level record detected");
+                
+                // Get the currently selected category from the dropdown
+                var categoryDropdown = $("#categoriesDropdown").data("kendoDropDownList");
+                if (categoryDropdown) {
+                  var selectedCategory = categoryDropdown.value();
+                  console.log("[CATEGORY DEFAULT] Current dropdown selection:", selectedCategory);
+                  
+                  // Only set a default if the selected category is not 'ALL'
+                  if (selectedCategory && selectedCategory !== "ALL") {
+                    console.log("[CATEGORY DEFAULT] Setting default category to:", selectedCategory);
+                    
+                    // Set the category on the model
+                    e.model.set("categoryId", selectedCategory);
+                    
+                    // Get a reference to the treelist
+                    var treelist = $("#conditionsTreeList").data("kendoTreeList");
+                    if (treelist) {
+                      // Set a timeout to explicitly update the category cell
+                      setTimeout(function() {
+                        // Get the newly added row by its unique ID
+                        var addedRow = treelist.tbody.find("tr[data-uid='" + e.model.uid + "']");
+                        if (addedRow.length) {
+                          // Get the category cell (index 1 is typically the category column)
+                          var categoryCell = addedRow.find("td:eq(1)");
+                          if (categoryCell.length) {
+                            // Get the category display name
+                            var categoryName = "";
+                            for (var j = 0; j < srcaCategoriesData.length; j++) {
+                              if (srcaCategoriesData[j].id === selectedCategory) {
+                                categoryName = srcaCategoriesData[j].name;
+                                break;
+                              }
+                            }
+                            
+                            // Update the cell content with the category name
+                            if (categoryName) {
+                              console.log("[CATEGORY DEFAULT] Updating category cell with name:", categoryName);
+                              categoryCell.text(categoryName);
+                            }
+                          }
+                        }
+                      }, 50); // Short delay to ensure the row has been rendered
                     }
                   } else {
-                    console.log("[CATEGORY COPY] Added row not found");
+                    console.log("[CATEGORY DEFAULT] No default category will be set (ALL selected)");
                   }
-                }, 50); // Short delay to ensure the row has been rendered
-              } else {
-                console.log("[CATEGORY COPY] Parent not found or has no category");
+                } else {
+                  console.log("[CATEGORY DEFAULT] Categories dropdown not found");
+                }
               }
             }
           } catch (error) {
