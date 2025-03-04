@@ -1301,6 +1301,36 @@ function yearMadeReportableEditor(container, options) {
             `
           }
         ],
+        add: function(e) {
+          // When adding a new record, check if it's a child record (has parentId set)
+          if (e.model.parentDatabaseId) {
+            console.log("Adding child with parent ID:", e.model.parentDatabaseId);
+            
+            // Find the parent record by iterating through the data items
+            var foundParent = null;
+            var allItems = this.dataSource.data();
+            
+            // Loop through all items to find the parent
+            for (var i = 0; i < allItems.length; i++) {
+              if (allItems[i].databaseId === e.model.parentDatabaseId) {
+                foundParent = allItems[i];
+                break;
+              }
+            }
+            
+            // If parent is found and has a category, apply it to the child
+            if (foundParent && foundParent.categoryId) {
+              console.log("Found parent:", foundParent);
+              console.log("Parent category:", foundParent.categoryId);
+              
+              // Set the category of the new child record to match the parent's category
+              e.model.set("categoryId", foundParent.categoryId);
+              console.log("Pre-filled category from parent:", foundParent.categoryId);
+            } else {
+              console.log("Parent not found or has no category");
+            }
+          }
+        },
         dataBound: function (e) {
             var items = e.sender.items();
             for (var i = 0; i < items.length; i++) {
@@ -1320,6 +1350,47 @@ function yearMadeReportableEditor(container, options) {
         columns: columns,
         edit: function (e) {
           console.log("Editing record:", e.model);
+          
+          try {
+            // Check if this is a new child record (has parentId but no existing databaseId)
+            if (e.model.parentDatabaseId && !e.model.databaseId) {
+              console.log("[CATEGORY COPY] New child record detected with parent ID:", e.model.parentDatabaseId);
+              
+              // Get a reference to the treelist
+              var treelist = $("#conditionsTreeList").data("kendoTreeList");
+              if (!treelist) {
+                console.error("[CATEGORY COPY] TreeList not found");
+                return;
+              }
+              
+              // Try to get the data from the treelist
+              var allItems = treelist.dataSource.data();
+              console.log("[CATEGORY COPY] Got data items, count:", allItems.length);
+              
+              // Loop through all items to find the parent
+              var foundParent = null;
+              for (var i = 0; i < allItems.length; i++) {
+                if (allItems[i].databaseId === e.model.parentDatabaseId) {
+                  foundParent = allItems[i];
+                  console.log("[CATEGORY COPY] Parent found:", foundParent);
+                  break;
+                }
+              }
+              
+              // If parent is found and has a category, apply it to the child
+              if (foundParent && foundParent.categoryId) {
+                console.log("[CATEGORY COPY] Parent category found:", foundParent.categoryId);
+                
+                // Set the category of the child record to match the parent's category
+                e.model.set("categoryId", foundParent.categoryId);
+                console.log("[CATEGORY COPY] Child category set to:", foundParent.categoryId);
+              } else {
+                console.log("[CATEGORY COPY] Parent not found or has no category");
+              }
+            }
+          } catch (error) {
+            console.error("[CATEGORY COPY] Error in edit handler:", error);
+          }
           
           // No longer setting default values here
           
