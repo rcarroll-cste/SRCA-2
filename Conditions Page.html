@@ -1384,6 +1384,36 @@ function yearMadeReportableEditor(container, options) {
                 // Set the category of the child record to match the parent's category
                 e.model.set("categoryId", foundParent.categoryId);
                 console.log("[CATEGORY COPY] Child category set to:", foundParent.categoryId);
+                
+                // Set a timeout to explicitly update the category cell after the model has been updated
+                setTimeout(function() {
+                  // Get the newly added row by its unique ID
+                  var addedRow = treelist.tbody.find("tr[data-uid='" + e.model.uid + "']");
+                  if (addedRow.length) {
+                    // Get the category cell (index 1 is typically the category column, adjust if needed)
+                    var categoryCell = addedRow.find("td:eq(1)");
+                    if (categoryCell.length) {
+                      // Get the category display name
+                      var categoryName = "";
+                      for (var j = 0; j < srcaCategoriesData.length; j++) {
+                        if (srcaCategoriesData[j].id === foundParent.categoryId) {
+                          categoryName = srcaCategoriesData[j].name;
+                          break;
+                        }
+                      }
+                      
+                      // Update the cell content with the category name
+                      if (categoryName) {
+                        console.log("[CATEGORY COPY] Updating category cell with name:", categoryName);
+                        categoryCell.text(categoryName);
+                      }
+                    } else {
+                      console.log("[CATEGORY COPY] Category cell not found");
+                    }
+                  } else {
+                    console.log("[CATEGORY COPY] Added row not found");
+                  }
+                }, 50); // Short delay to ensure the row has been rendered
               } else {
                 console.log("[CATEGORY COPY] Parent not found or has no category");
               }
