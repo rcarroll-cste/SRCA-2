@@ -294,7 +294,7 @@ function yearMadeReportableEditor(container, options) {
   years.unshift({ text: "", value: null });
   
   // Create dropdown
-  const input = $('<input required name="' + options.field + '"/>');
+  const input = $('<input name="' + options.field + '"/>');
   input.appendTo(container);
   
   const dropDown = input.kendoDropDownList({
