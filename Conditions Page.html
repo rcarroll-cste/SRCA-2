@@ -1301,6 +1301,183 @@ function yearMadeReportableEditor(container, options) {
             `
           }
         ],
+        excelExport: function(e) {
+          console.log("Excel export event triggered", e);
+          
+          // Prevent the default export
+          e.preventDefault();
+          
+          try {
+            // Get data from the treelist
+            var data = e.data;
+            
+            // Get the column information
+            var columns = e.sender.columns;
+            
+            // Create rows array with header row first
+            var rows = [];
+            
+            // Create header row cells
+            var headerCells = [];
+            columns.forEach(function(column) {
+              if (column.field && !column.hidden) {
+                headerCells.push({
+                  value: column.title || column.field,
+                  bold: true,
+                  background: "#7a7a7a",
+                  color: "#fff"
+                });
+              }
+            });
+            
+            // Add header row
+            rows.push({ cells: headerCells });
+            
+            // Create a function to process data hierarchically
+            function processDataHierarchically(items, level) {
+              items.forEach(function(dataItem) {
+                var rowCells = [];
+                
+                // Add cells based on visible columns
+                columns.forEach(function(column, columnIndex) {
+                  if (column.field && !column.hidden) {
+                    var fieldValue = dataItem[column.field];
+                    var formattedValue = fieldValue;
+                    
+                    // Handle timeframe fields - transform IDs to names
+                    if (column.field === "timeframe1Id" && fieldValue) {
+                      const timeframe = timeframe1Data.find(t => t.id === fieldValue);
+                      if (timeframe) {
+                        formattedValue = timeframe.name;
+                      }
+                    } else if (column.field === "timeframe2Id" && fieldValue) {
+                      const timeframe = timeframe2Data.find(t => t.id === fieldValue);
+                      if (timeframe) {
+                        formattedValue = timeframe.name;
+                      }
+                    } else if (column.field === "timeframe3Id" && fieldValue) {
+                      const timeframe = timeframe3Data.find(t => t.id === fieldValue);
+                      if (timeframe) {
+                        formattedValue = timeframe.name;
+                      }
+                    } else if (column.field === "timeframe4Id" && fieldValue) {
+                      const timeframe = timeframe4Data.find(t => t.id === fieldValue);
+                      if (timeframe) {
+                        formattedValue = timeframe.name;
+                      }
+                    } else if (column.field === "categoryId" && fieldValue) {
+                      const category = srcaCategoriesData.find(c => c.id === fieldValue);
+                      if (category) {
+                        formattedValue = category.name;
+                      }
+                    }
+                    
+                    // Add indentation to the title field for child items
+                    if (columnIndex === 0 && level > 0) {
+                      // Create indentation by adding spaces before the title
+                      var indent = "";
+                      for (var i = 0; i < level; i++) {
+                        indent += "    "; // Four spaces per level
+                      }
+                      formattedValue = indent + formattedValue;
+                    }
+                    
+                    rowCells.push({
+                      value: formattedValue
+                    });
+                  }
+                });
+                
+                // Add the data row
+                rows.push({ cells: rowCells });
+                
+                // Process children recursively
+                if (dataItem.items && dataItem.items.length > 0) {
+                  processDataHierarchically(dataItem.items, level + 1);
+                }
+              });
+            }
+            
+            // Get the root-level items from the TreeList
+            var rootItems = [];
+            for (var i = 0; i < data.length; i++) {
+              var item = data[i];
+              // If this item has no parent, it's a root item
+              if (!item.parentDatabaseId) {
+                rootItems.push(item);
+              }
+            }
+            
+            // Now add all items that are referenced by parentId
+            for (var i = 0; i < data.length; i++) {
+              var item = data[i];
+              if (item.parentDatabaseId) {
+                // Find the parent
+                var parent = data.find(p => p.databaseId === item.parentDatabaseId);
+                if (parent) {
+                  // Initialize items array if it doesn't exist
+                  if (!parent.items) {
+                    parent.items = [];
+                  }
+                  // Add this item to its parent's items
+                  parent.items.push(item);
+                } else {
+                  // If parent not found (shouldn't happen), add to root
+                  rootItems.push(item);
+                }
+              }
+            }
+            
+            // Process hierarchical data starting with root items
+            processDataHierarchically(rootItems, 0);
+            
+            // Define column settings with more reasonable widths
+            var columnSettings = columns.map(function(col) {
+              var width;
+              
+              // Set specific widths based on column type
+              if (col.field === "title") {
+                width = 300; // Title column is wider
+              } else if (col.field === "categoryId") {
+                width = 150; // Category column
+              } else if (col.field && col.field.includes("timeframe")) {
+                width = 120; // Timeframe columns
+              } else {
+                width = 100; // Default width
+              }
+              
+              return {
+                width: width,
+                autoWidth: false // Disable autoWidth to use our specific widths
+              };
+            });
+            
+            // Create the workbook with proper structure
+            var workbook = new kendo.ooxml.Workbook({
+              sheets: [
+                {
+                  columns: columnSettings,
+                  title: "Conditions",
+                  rows: rows
+                }
+              ]
+            });
+            
+            console.log("Workbook created:", workbook);
+            
+            // Save the workbook using async method
+            workbook.toDataURLAsync().then(function(dataURL) {
+              kendo.saveAs({
+                dataURI: dataURL,
+                fileName: "Conditions.xlsx"
+              });
+            }).catch(function(error) {
+              console.error("Error generating Excel file:", error);
+            });
+          } catch (error) {
+            console.error("Error in Excel export:", error);
+          }
+        },
         add: function(e) {
           // When adding a new record, check if it's a child record (has parentId set)
           if (e.model.parentDatabaseId) {
